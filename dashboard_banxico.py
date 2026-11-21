@@ -1,5 +1,5 @@
 # Tablero del SIE de Banxico, con token
-# Herramientas de Visualización · IDIA22X · Paarcial III
+# Herramientas de Visualización · IDIA224 · Unidad III
 #
 #     pip install -r requirements.txt
 #     streamlit run dashboard_banxico.py
@@ -279,16 +279,26 @@ with derecha:
 
 abajo_izq, abajo_der = st.columns(2)
 with abajo_izq:
-    st.subheader("Qué tan movido estuvo cada año")
+    # Gráfica nueva: reemplaza al boxplot por año.
+    # Muestra CUÁNDO hubo inestabilidad, no solo cuánta hubo por año.
+    st.subheader("Qué tan inestable ha estado")
     principal["Variacion"] = principal["Valor"].pct_change() * 100
-    porAnio = principal.dropna(subset=["Variacion"])
+    # La desviación estándar necesita al menos 2 datos en la ventana
+    ventana = max(suavizado, 2)
+    principal["Volatilidad"] = principal["Variacion"].rolling(ventana).std()
 
     fig, ax = plt.subplots(figsize=(6, 3.4))
-    sns.boxplot(data=porAnio, x="Anio", y="Variacion", color=GRIS, ax=ax)
-    ax.axhline(0, color=ROJO, linewidth=1, linestyle="--")
-    ax.set_xlabel("Año")
-    ax.set_ylabel("Variación diaria (%)")
+    ax.plot(principal["Fecha"], principal["Volatilidad"], color=ROJO, linewidth=1.5)
+    ax.fill_between(
+        principal["Fecha"], principal["Volatilidad"], color=ROJO, alpha=0.15
+    )
+    ax.set_xlabel("Fecha")
+    ax.set_ylabel("Volatilidad (desv. est. diaria, %)")
     st.pyplot(fig)
+    st.caption(
+        f"Desviación estándar móvil de {ventana} días de la variación diaria. "
+        "Picos altos = periodos de mayor incertidumbre."
+    )
 
 with abajo_der:
     st.subheader("Promedio por mes y año")
